@@ -1,0 +1,60 @@
+@model IReadOnlyList<ProjectMessageListItemViewModel>
+@inject Microsoft.Extensions.Localization.IStringLocalizer<monprojet.NET.Resources.SharedResource> Localizer
+@{
+    ViewData["Title"] = Localizer["MessagesPageTitle"];
+    ViewData["Breadcrumb"] = Localizer["NavMessages"];
+    Layout = "_SidebarLayout";
+}
+
+<h2 class="mb-4">@Localizer["MessagesPageTitle"]</h2>
+
+@if (!Model.Any())
+{
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px;">@Localizer["MessagesEmpty"]</div>
+}
+else
+{
+    <div class="row g-3">
+        @for (var loopIndex = 0; loopIndex < Model.Count; loopIndex++)
+        {
+            var project = Model[loopIndex];
+            var statusBadgeClass = project.Status switch
+            {
+                ProjectManager.Core.Enums.ProjectStatus.Completed => "background:var(--color-success-bg);color:var(--color-success);",
+                ProjectManager.Core.Enums.ProjectStatus.InProgress => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                ProjectManager.Core.Enums.ProjectStatus.Late => "background:var(--color-danger-bg);color:var(--color-danger);",
+                _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+            };
+            var lastMessageText = string.IsNullOrWhiteSpace(project.LastMessage)
+                ? Localizer["MessagesNone"].Value
+                : project.LastMessage;
+
+            <div class="col-12 col-md-6 col-xl-4">
+                <div style="--i:@loopIndex;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:18px 20px;display:flex;flex-direction:column;gap:10px;animation:fadeInUp 300ms ease both;animation-delay:calc(var(--i,0) * 60ms);height:100%;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="mb-0" style="font-size:16px;font-weight:600;">@project.ProjectName</h5>
+                        <span style="@statusBadgeClass border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@project.Status</span>
+                    </div>
+
+                    <div style="font-size:12px;color:var(--color-text-muted);">
+                        @Localizer["MessagesLastMessage"]
+                        @if (project.LastMessageAt is not null)
+                        {
+                            <span> · @project.LastMessageAt.Value.ToString("g")</span>
+                        }
+                    </div>
+
+                    <div style="font-size:13px;color:var(--color-text-secondary);">@lastMessageText</div>
+
+                    <a asp-controller="Project"
+                       asp-action="Details"
+                       asp-route-id="@project.ProjectId"
+                       asp-fragment="project-messages"
+                       style="border:1px solid var(--color-primary-mid);color:var(--color-primary);border-radius:var(--radius-sm);padding:6px 14px;font-size:12px;font-weight:500;margin-top:auto;display:inline-block;text-decoration:none;">
+                        @Localizer["MessagesOpen"]
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+}

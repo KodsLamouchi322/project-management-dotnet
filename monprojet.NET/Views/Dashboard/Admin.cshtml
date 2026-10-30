@@ -1,0 +1,284 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    ViewData["Breadcrumb"] = "Dashboard > Admin";
+    Layout = "_SidebarLayout";
+}
+
+<h2 class="mb-2" style="font-size:22px;font-weight:700;">Admin dashboard</h2>
+<p class="text-muted mb-4" style="font-size:14px;">Overview of all projects, tasks, progress, and delivery team.</p>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="surface-panel h-100 p-3">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);">Projects</div>
+            <div style="font-size:24px;font-weight:700;">@Model.TotalProjects</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="surface-panel h-100 p-3">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);">Active</div>
+            <div style="font-size:24px;font-weight:700;">@Model.ActiveProjects</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="surface-panel h-100 p-3">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);">Tasks</div>
+            <div style="font-size:24px;font-weight:700;">@Model.TotalTasks</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="surface-panel h-100 p-3">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);">Completed</div>
+            <div style="font-size:24px;font-weight:700;">@Model.CompletedTasks</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="surface-panel h-100 p-3">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);">Senior devs</div>
+            <div style="font-size:24px;font-weight:700;">@Model.SeniorDevCount</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="surface-panel h-100 p-3">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);">Developers</div>
+            <div style="font-size:24px;font-weight:700;">@Model.DeveloperCount</div>
+        </div>
+    </div>
+</div>
+
+<div class="surface-panel mb-4">
+    <div class="panel-header">Charts</div>
+    <div class="p-3">
+        <div class="row g-4">
+            <div class="col-12 col-lg-4">
+                <h6 class="mb-3">Tasks by status</h6>
+                <canvas id="adminTaskStatusChart"></canvas>
+            </div>
+            <div class="col-12 col-lg-4">
+                <h6 class="mb-3">Projects by status</h6>
+                <canvas id="adminProjectStatusChart"></canvas>
+            </div>
+            <div class="col-12 col-lg-4">
+                <h6 class="mb-3">Average progress (snapshots)</h6>
+                <canvas id="adminProgressTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="surface-panel mb-4">
+    <div class="panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>All projects</span>
+        <input id="adminProjectSearch" type="search" style="max-width:280px;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;" placeholder="Search by name..." />
+    </div>
+    <div class="p-3">
+        @if (!Model.Projects.Any())
+        {
+            <p class="text-muted mb-0">No projects yet.</p>
+        }
+        else
+        {
+            <div class="row g-3" id="adminProjectGrid">
+                @foreach (var project in Model.Projects)
+                {
+                    <div class="col-12 col-md-6 col-xl-4 admin-project-card" data-project-name="@project.Name.ToLowerInvariant()">
+                        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px 18px;height:100%;">
+                            <div style="font-size:14px;font-weight:600;margin-bottom:6px;">@project.Name</div>
+                            @{
+                                var statusStyle = project.Status switch
+                                {
+                                    ProjectManager.Core.Enums.ProjectStatus.InProgress => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                                    ProjectManager.Core.Enums.ProjectStatus.Completed => "background:var(--color-success-bg);color:var(--color-success);",
+                                    ProjectManager.Core.Enums.ProjectStatus.Late => "background:var(--color-danger-bg);color:var(--color-danger);",
+                                    _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+                                };
+                            }
+                            <span style="@statusStyle border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@project.Status</span>
+                            <div style="font-size:12px;color:var(--color-text-muted);margin-top:10px;">
+                                Client: @project.ClientName<br />
+                                Senior: @project.SeniorDevName<br />
+                                Deadline: @project.Deadline.ToString("dd/MM/yyyy")
+                            </div>
+                            <div style="height:5px;background:var(--color-border);border-radius:4px;margin:10px 0;overflow:hidden;">
+                                <div style="height:100%;background:var(--color-primary);width:@project.ProgressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;border-radius:4px;"></div>
+                            </div>
+                            <div style="font-size:12px;color:var(--color-text-muted);">@project.CompletedTasks / @project.TotalTasks tasks</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-xl-7">
+        <div class="surface-panel h-100">
+            <div class="panel-header">Upcoming tasks (by deadline)</div>
+            <div class="table-responsive p-0">
+                <table class="modern-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Project</th>
+                            <th>Developer</th>
+                            <th>Status</th>
+                            <th>Deadline</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (!Model.RecentTasks.Any())
+                    {
+                        <tr><td colspan="5" class="text-muted p-3">No tasks.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var task in Model.RecentTasks)
+                        {
+                            <tr>
+                                <td>@task.Title</td>
+                                <td>@task.ProjectName</td>
+                                <td>@task.DeveloperName</td>
+                                <td>@task.Status</td>
+                                <td>@task.Deadline.ToString("dd/MM/yyyy")</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-5">
+        <div class="surface-panel h-100">
+            <div class="panel-header">Team</div>
+            <div class="p-3">
+                @if (!Model.TeamMembers.Any())
+                {
+                    <p class="text-muted mb-0">No senior developers or developers in the system.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="modern-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var member in Model.TeamMembers)
+                            {
+                                <tr>
+                                    <td>@member.FullName</td>
+                                    <td>@member.RoleLabel</td>
+                                    <td style="font-size:12px;">@member.Email</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const taskStatusData = @Html.Raw(Model.TaskStatusChartJson);
+        const projectStatusData = @Html.Raw(Model.ProjectStatusChartJson);
+        const progressTrendData = @Html.Raw(Model.ProgressTrendChartJson);
+
+        if (taskStatusData?.datasets?.[0]) {
+            taskStatusData.datasets[0].backgroundColor = ['#6c757d', '#fd7e14', '#1D9E75'];
+        }
+        if (projectStatusData?.datasets?.[0]) {
+            projectStatusData.datasets[0].backgroundColor = ['#0d6efd', '#198754', '#dc3545'];
+        }
+        if (progressTrendData?.datasets?.[0]) {
+            progressTrendData.datasets[0].borderColor = '#1D9E75';
+            progressTrendData.datasets[0].backgroundColor = 'rgba(29,158,117,.15)';
+        }
+
+        new Chart(document.getElementById('adminTaskStatusChart'), {
+            type: 'doughnut',
+            data: taskStatusData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#6C757D',
+                            font: { family: "'Inter', sans-serif", size: 12 }
+                        }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('adminProjectStatusChart'), {
+            type: 'bar',
+            data: projectStatusData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, color: '#6C757D' },
+                        grid: { color: '#E9ECEF' }
+                    },
+                    x: {
+                        ticks: { color: '#6C757D' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('adminProgressTrendChart'), {
+            type: 'line',
+            data: progressTrendData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#6C757D',
+                            font: { family: "'Inter', sans-serif", size: 12 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#E9ECEF' },
+                        ticks: { color: '#6C757D' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#6C757D', maxRotation: 45, minRotation: 0 }
+                    }
+                }
+            }
+        });
+
+        const adminProjectSearch = document.getElementById('adminProjectSearch');
+        const adminProjectCards = document.querySelectorAll('.admin-project-card');
+        adminProjectSearch?.addEventListener('input', function () {
+            const query = this.value.trim().toLowerCase();
+            adminProjectCards.forEach(function (card) {
+                const name = card.getAttribute('data-project-name') || '';
+                card.style.display = name.includes(query) ? '' : 'none';
+            });
+        });
+    </script>
+}

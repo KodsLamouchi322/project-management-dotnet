@@ -1,0 +1,373 @@
+@model DeveloperDashboardViewModel
+@inject Microsoft.Extensions.Localization.IStringLocalizer<monprojet.NET.Resources.SharedResource> Localizer
+@{
+    ViewData["Title"] = "Developer Dashboard";
+    ViewData["Breadcrumb"] = "Dashboard > Developer";
+    Layout = "_SidebarLayout";
+
+    var scoreBadgeStyle = Model.ScorePercentage >= 80
+        ? "background:var(--color-success-bg);color:var(--color-success);"
+        : Model.ScorePercentage >= 50
+            ? "background:var(--color-warning-bg);color:var(--color-warning);"
+            : "background:var(--color-danger-bg);color:var(--color-danger);";
+
+    var toDoCount = Model.MyTasks.Count(task => task.Status == "ToDo");
+    var inProgressCount = Model.MyTasks.Count(task => task.Status == "InProgress");
+    var completedCount = Model.MyTasks.Count(task => task.Status == "Completed");
+}
+
+@Html.AntiForgeryToken()
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="font-size:22px;font-weight:700;">Developer Dashboard</h2>
+    <div class="d-flex align-items-center gap-2">
+        <span id="developer-score-badge" style="padding:5px 14px;border-radius:var(--radius-full);font-size:13px;font-weight:600;@scoreBadgeStyle">Weekly Score: @Model.ScorePercentage.ToString("0.##")%</span>
+        <a asp-controller="Dashboard" asp-action="ScoreHistory" style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;color:var(--color-text-secondary);text-decoration:none;">Score History</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-8">
+        <div class="surface-panel h-100">
+            <div class="panel-header">My Tasks (Kanban)</div>
+            <div class="p-3">
+                @if (!Model.MyTasks.Any())
+                {
+                    <p class="text-muted mb-0">No tasks assigned.</p>
+                }
+                else
+                {
+                    <div class="kanban-grid" id="kanban-board">
+                        <div class="kanban-column-wrap">
+                            <div class="kanban-column-head"><span class="kanban-column-dot" style="background:#ADB5BD;"></span>To Do <span class="kanban-column-count">@toDoCount</span></div>
+                            <div class="d-flex flex-column gap-2 kanban-column" data-status-column="ToDo" style="min-height: 280px;">
+                                @foreach (var task in Model.MyTasks.Where(item => item.Status == "ToDo"))
+                                {
+                                    var priorityStyle = task.Priority switch
+                                    {
+                                        "High" => "background:var(--color-warning-bg);color:var(--color-warning);",
+                                        "Medium" => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                                        "Low" => "background:var(--color-success-bg);color:var(--color-success);",
+                                        _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+                                    };
+                                    var isOverdue = task.Deadline.Date < DateTime.Today;
+
+                                    <div class="card task-card" data-task-id="@task.TaskId" draggable="true">
+                                        <div>
+                                            <div class="task-title">@task.Title</div>
+                                            <div class="task-project-name">@task.ProjectName</div>
+                                            <a asp-controller="Project" asp-action="Details" asp-route-id="@task.ProjectId" asp-fragment="project-messages" style="font-size:11px;color:var(--color-primary);text-decoration:none;" draggable="false">@Localizer["NavMessages"]</a>
+                                            <span class="badge" style="@priorityStyle font-size:10px;border-radius:var(--radius-full);padding:2px 8px;">@task.Priority</span>
+                                            <div class="task-deadline @(isOverdue ? "overdue" : string.Empty)">Deadline: @task.Deadline.ToShortDateString()</div>
+                                            <div class="mt-2">
+                                                <select id="task-status-@task.TaskId" name="taskStatus-@task.TaskId" class="task-status-select" data-task-id="@task.TaskId">
+                                                    <option value="ToDo" selected="@(task.Status == "ToDo" ? "selected" : null)">To Do</option>
+                                                    <option value="InProgress" selected="@(task.Status == "InProgress" ? "selected" : null)">In Progress</option>
+                                                    <option value="Completed" selected="@(task.Status == "Completed" ? "selected" : null)">Completed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="kanban-column-wrap">
+                            <div class="kanban-column-head"><span class="kanban-column-dot" style="background:var(--color-primary);"></span>In Progress <span class="kanban-column-count">@inProgressCount</span></div>
+                            <div class="d-flex flex-column gap-2 kanban-column" data-status-column="InProgress" style="min-height: 280px;">
+                                @foreach (var task in Model.MyTasks.Where(item => item.Status == "InProgress"))
+                                {
+                                    var priorityStyle = task.Priority switch
+                                    {
+                                        "High" => "background:var(--color-warning-bg);color:var(--color-warning);",
+                                        "Medium" => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                                        "Low" => "background:var(--color-success-bg);color:var(--color-success);",
+                                        _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+                                    };
+                                    var isOverdue = task.Deadline.Date < DateTime.Today;
+
+                                    <div class="card task-card" data-task-id="@task.TaskId" draggable="true">
+                                        <div>
+                                            <div class="task-title">@task.Title</div>
+                                            <div class="task-project-name">@task.ProjectName</div>
+                                            <a asp-controller="Project" asp-action="Details" asp-route-id="@task.ProjectId" asp-fragment="project-messages" style="font-size:11px;color:var(--color-primary);text-decoration:none;" draggable="false">@Localizer["NavMessages"]</a>
+                                            <span class="badge" style="@priorityStyle font-size:10px;border-radius:var(--radius-full);padding:2px 8px;">@task.Priority</span>
+                                            <div class="task-deadline @(isOverdue ? "overdue" : string.Empty)">Deadline: @task.Deadline.ToShortDateString()</div>
+                                            <div class="mt-2">
+                                                <select id="task-status-@task.TaskId" name="taskStatus-@task.TaskId" class="task-status-select" data-task-id="@task.TaskId">
+                                                    <option value="ToDo" selected="@(task.Status == "ToDo" ? "selected" : null)">To Do</option>
+                                                    <option value="InProgress" selected="@(task.Status == "InProgress" ? "selected" : null)">In Progress</option>
+                                                    <option value="Completed" selected="@(task.Status == "Completed" ? "selected" : null)">Completed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="kanban-column-wrap">
+                            <div class="kanban-column-head"><span class="kanban-column-dot" style="background:var(--color-success);"></span>Completed <span class="kanban-column-count">@completedCount</span></div>
+                            <div class="d-flex flex-column gap-2 kanban-column" data-status-column="Completed" style="min-height: 280px;">
+                                @foreach (var task in Model.MyTasks.Where(item => item.Status == "Completed"))
+                                {
+                                    var priorityStyle = task.Priority switch
+                                    {
+                                        "High" => "background:var(--color-warning-bg);color:var(--color-warning);",
+                                        "Medium" => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                                        "Low" => "background:var(--color-success-bg);color:var(--color-success);",
+                                        _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+                                    };
+
+                                    <div class="card task-card" data-task-id="@task.TaskId" draggable="true">
+                                        <div>
+                                            <div class="task-title">@task.Title</div>
+                                            <div class="task-project-name">@task.ProjectName</div>
+                                            <a asp-controller="Project" asp-action="Details" asp-route-id="@task.ProjectId" asp-fragment="project-messages" style="font-size:11px;color:var(--color-primary);text-decoration:none;" draggable="false">@Localizer["NavMessages"]</a>
+                                            <span class="badge" style="@priorityStyle font-size:10px;border-radius:var(--radius-full);padding:2px 8px;">@task.Priority</span>
+                                            <div class="task-deadline">Deadline: @task.Deadline.ToShortDateString()</div>
+                                            <div class="mt-2">
+                                                <select id="task-status-@task.TaskId" name="taskStatus-@task.TaskId" class="task-status-select" data-task-id="@task.TaskId">
+                                                    <option value="ToDo" selected="@(task.Status == "ToDo" ? "selected" : null)">To Do</option>
+                                                    <option value="InProgress" selected="@(task.Status == "InProgress" ? "selected" : null)">In Progress</option>
+                                                    <option value="Completed" selected="@(task.Status == "Completed" ? "selected" : null)">Completed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="surface-panel h-100" style="overflow:hidden;">
+            <div class="panel-header">Notifications</div>
+            <div>
+                @if (!Model.Notifications.Any())
+                {
+                    <p class="text-muted mb-0 p-3">No unread notifications.</p>
+                }
+                else
+                {
+                    <div id="notification-list">
+                        @foreach (var notification in Model.Notifications)
+                        {
+                            <button type="button"
+                                    class="notification-panel-item notification-item"
+                                    data-notification-id="@notification.NotificationId">
+                                <div class="notification-message">@notification.Message</div>
+                                <small class="notification-time">@notification.CreatedAt.ToString("g")</small>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="surface-panel">
+            <div class="panel-header">My Team</div>
+            <div class="p-3">
+                @if (!Model.MyTeam.Any())
+                {
+                    <p class="text-muted mb-0">No teammates found on your projects.</p>
+                }
+                else
+                {
+                    <div class="team-grid">
+                        @foreach (var teammate in Model.MyTeam)
+                        {
+                            var initials = string.Concat(teammate.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(part => part[0])).ToUpperInvariant();
+                            <div class="team-card">
+                                <div class="team-avatar">@initials</div>
+                                <div class="team-name">@teammate.FullName</div>
+                                <small class="team-active-count">@teammate.ActiveTaskCount active task(s)</small>
+
+                                @if (teammate.Tasks.Any())
+                                {
+                                    <div class="team-task-list">
+                                        @foreach (var task in teammate.Tasks)
+                                        {
+                                            var statusStyle = task.Status switch
+                                            {
+                                                "Completed" => "background:var(--color-success-bg);color:var(--color-success);",
+                                                "InProgress" => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                                                "ToDo" => "background:var(--color-surface-hover);color:var(--color-text-secondary);",
+                                                _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+                                            };
+
+                                            <div class="team-task-row">
+                                                <span>@task.Title</span>
+                                                <span style="@statusStyle border-radius:var(--radius-full);padding:1px 7px;font-size:10px;">@task.Status</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            // ── Notifications ──────────────────────────────────────────
+            const notificationList = document.getElementById('notification-list');
+            if (notificationList && token) {
+                notificationList.addEventListener('click', function (event) {
+                    const target = event.target.closest('.notification-item');
+                    if (!target) return;
+
+                    const notificationId = target.dataset.notificationId;
+                    $.ajax({
+                        url: '@Url.Action("MarkNotificationAsRead", "Dashboard")',
+                        method: 'POST',
+                        data: {
+                            notificationId: notificationId,
+                            __RequestVerificationToken: token
+                        }
+                    }).done(function () {
+                        target.remove();
+                    });
+                });
+            }
+
+            // ── Kanban ─────────────────────────────────────────────────
+            const kanbanBoard = document.getElementById('kanban-board');
+            if (!kanbanBoard || !token) return;
+
+            // Désactive les selects — le drag est le seul moyen de changer le statut
+            kanbanBoard.querySelectorAll('.task-status-select').forEach(function (s) {
+                s.disabled = true;
+            });
+
+            // Seule règle interdite : revenir vers "ToDo" depuis "InProgress" ou "Completed"
+            function isTransitionAllowed(from, to) {
+                if (!from || !to) return false;
+                if (to === 'ToDo' && from !== 'ToDo') return false;
+                return true;
+            }
+
+            function updateTaskStatus(taskId, newStatus, onSuccess) {
+                $.ajax({
+                    url: '@Url.Action("UpdateTaskStatus", "Dashboard")',
+                    method: 'POST',
+                    data: {
+                        taskId: taskId,
+                        status: newStatus,
+                        __RequestVerificationToken: token
+                    }
+                }).done(function (response) {
+                    if (!response.success) {
+                        alert(response.message || 'Task status update failed.');
+                        return;
+                    }
+                    if (typeof onSuccess === 'function') {
+                        onSuccess(response.status);
+                    }
+                    const badge = document.getElementById('developer-score-badge');
+                    if (badge) {
+                        badge.textContent = 'Weekly Score: ' + response.scorePercentage + '%';
+                    }
+                }).fail(function (xhr) {
+                    alert(xhr.responseJSON?.message || 'Task status update failed.');
+                });
+            }
+
+            let draggedCard = null;
+
+            // ── dragstart ──────────────────────────────────────────────
+            // Le statut d'origine est stocké dans data-drag-from sur la carte,
+            // pour survivre au dragend qui remet draggedCard à null.
+            kanbanBoard.addEventListener('dragstart', function (event) {
+                const card = event.target.closest('.task-card');
+                if (!card) return;
+
+                const fromStatus = card.closest('.kanban-column')?.dataset.statusColumn;
+                if (!fromStatus) return;
+
+                draggedCard = card;
+                card.dataset.dragFrom = fromStatus;
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', card.dataset.taskId || '');
+                card.classList.add('opacity-50');
+            });
+
+            // ── dragend ────────────────────────────────────────────────
+            kanbanBoard.addEventListener('dragend', function (event) {
+                const card = event.target.closest('.task-card');
+                if (card) {
+                    card.classList.remove('opacity-50');
+                    delete card.dataset.dragFrom;
+                }
+                draggedCard = null;
+            });
+
+            // ── dragover ───────────────────────────────────────────────
+            kanbanBoard.addEventListener('dragover', function (event) {
+                if (!draggedCard) return;
+
+                const column = event.target.closest('.kanban-column');
+                if (!column) return;
+
+                const fromStatus   = draggedCard.dataset.dragFrom;
+                const targetStatus = column.dataset.statusColumn;
+
+                if (!isTransitionAllowed(fromStatus, targetStatus)) {
+                    event.dataTransfer.dropEffect = 'none';
+                    return;
+                }
+
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+            });
+
+            // ── drop ───────────────────────────────────────────────────
+            kanbanBoard.addEventListener('drop', function (event) {
+                event.preventDefault();
+                if (!draggedCard) return;
+
+                const column = event.target.closest('.kanban-column');
+                if (!column) return;
+
+                const taskId       = draggedCard.dataset.taskId;
+                const fromStatus   = draggedCard.dataset.dragFrom;
+                const targetStatus = column.dataset.statusColumn;
+
+                if (!isTransitionAllowed(fromStatus, targetStatus)) {
+                    alert('Impossible de ramener une tâche vers "To Do".');
+                    return;
+                }
+
+                // FIX CRITIQUE : capturer la référence DOM dans une variable locale
+                // AVANT l'appel AJAX. Le dragend se déclenche avant que le callback
+                // AJAX ne s'exécute et remet draggedCard à null — sans cette ligne,
+                // appendChild échoue avec "parameter 1 is not of type 'Node'".
+                const cardToMove = draggedCard;
+
+                updateTaskStatus(taskId, targetStatus, function (savedStatus) {
+                    const targetColumn = kanbanBoard.querySelector(
+                        '[data-status-column="' + savedStatus + '"]'
+                    );
+                    if (targetColumn) targetColumn.appendChild(cardToMove);
+
+                    const select = cardToMove.querySelector('.task-status-select');
+                    if (select) select.value = savedStatus;
+                });
+            });
+
+        })();
+    </script>
+}

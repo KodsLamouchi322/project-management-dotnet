@@ -1,0 +1,52 @@
+@model ProjectFormViewModel
+@{
+    var isCreate = ViewData["IsProjectCreate"] as bool? == true;
+    var todayStr = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="mb-3">
+    <label asp-for="Name" class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;"></label>
+    <input asp-for="Name" class="input-clean" />
+    <span asp-validation-for="Name" class="text-danger" style="font-size:12px;"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Description" class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;"></label>
+    <textarea asp-for="Description" class="textarea-clean"></textarea>
+    <span asp-validation-for="Description" class="text-danger" style="font-size:12px;"></span>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="StartDate" class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;"></label>
+        @if (isCreate)
+        {
+            <input asp-for="StartDate" class="input-clean" type="date" min="@todayStr" />
+        }
+        else
+        {
+            <input asp-for="StartDate" class="input-clean" type="date" />
+        }
+        <span asp-validation-for="StartDate" class="text-danger" style="font-size:12px;"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="Deadline" class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;"></label>
+        @if (isCreate)
+        {
+            <input asp-for="Deadline" class="input-clean" type="date" min="@todayStr" />
+        }
+        else
+        {
+            <input asp-for="Deadline" class="input-clean" type="date" />
+        }
+        <span asp-validation-for="Deadline" class="text-danger" style="font-size:12px;"></span>
+    </div>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ClientId" class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;"></label>
+    <select asp-for="ClientId" asp-items="Model.Clients" class="select-clean">
+        <option value="">-- Select Client --</option>
+    </select>
+    <span asp-validation-for="ClientId" class="text-danger" style="font-size:12px;"></span>
+</div>

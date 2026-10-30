@@ -1,0 +1,59 @@
+@{
+    var index = ViewData["TaskIndex"]?.ToString() ?? "__INDEX__";
+    var developers = ViewData["Developers"] as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+                     ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    var minTaskDate = ViewData["MinTaskDeadline"]?.ToString() ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var maxTaskDate = ViewData["MaxTaskDeadline"]?.ToString();
+}
+
+<div class="task-row" data-task-index="@index" style="background:var(--color-surface);border:1px solid var(--color-border);border-left:3px solid var(--color-primary-mid);border-radius:var(--radius-md);padding:16px;margin-bottom:10px;position:relative;">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;">Title</label>
+            <input class="input-clean" name="Tasks[@index].Title" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;">Priority</label>
+            <select class="select-clean" name="Tasks[@index].Priority">
+                <option value="0">Low</option>
+                <option value="1">Medium</option>
+                <option value="2">High</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;">Description</label>
+        <textarea class="textarea-clean" name="Tasks[@index].Description"></textarea>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;">Deadline</label>
+            @if (string.IsNullOrEmpty(maxTaskDate))
+            {
+                <input type="date" class="input-clean" name="Tasks[@index].Deadline" min="@minTaskDate" />
+            }
+            else
+            {
+                <input type="date" class="input-clean" name="Tasks[@index].Deadline" min="@minTaskDate" max="@maxTaskDate" />
+            }
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;">Duration</label>
+            <input type="time" class="input-clean" step="60" name="Tasks[@index].Duration" />
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label" style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;">Developer</label>
+            <select class="select-clean" name="Tasks[@index].DeveloperId">
+                <option value="">-- Select Developer --</option>
+                @foreach (var developer in developers)
+                {
+                    <option value="@developer.Value">@developer.Text</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <button type="button" class="remove-task-btn" style="position:absolute;top:10px;right:10px;font-size:18px;color:var(--color-text-muted);background:none;border:none;cursor:pointer;line-height:1;">×</button>
+</div>

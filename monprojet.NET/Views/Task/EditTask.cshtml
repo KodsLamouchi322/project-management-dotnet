@@ -1,0 +1,21 @@
+@model TaskFormViewModel
+@{
+    ViewData["Title"] = "Edit Task";
+}
+
+<h2>Edit Task - @ViewData["ProjectName"]</h2>
+
+<form asp-action="EditTask" method="post">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ProjectId" />
+    <input type="hidden" asp-for="ProjectStartDate" />
+    <input type="hidden" asp-for="ProjectDeadline" />
+    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+    <partial name="_TaskForm" model="Model" />
+    <button type="submit" class="btn btn-primary">Update Task</button>
+    <a asp-controller="Project" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

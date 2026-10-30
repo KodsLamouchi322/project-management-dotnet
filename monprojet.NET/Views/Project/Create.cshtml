@@ -1,0 +1,162 @@
+@model ProjectFormViewModel
+@{
+    ViewData["Title"] = "Create Project";
+    ViewData["IsProjectCreate"] = true;
+    // Min = StartDate + 1 day
+    ViewData["MinTaskDeadline"] = Model.StartDate.AddDays(1).ToString("yyyy-MM-dd");
+    // Max = Project Deadline (exact day)
+    ViewData["MaxTaskDeadline"] = Model.Deadline.ToString("yyyy-MM-dd");
+}
+
+<h2>Create Project</h2>
+
+<form asp-controller="Project" asp-action="Create" method="post" style="max-width:720px;margin:0 auto;">
+    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+    <span asp-validation-for="PendingTasks" class="text-danger d-block mb-2"></span>
+    <partial name="_ProjectForm" model="Model" />
+
+    <hr />
+    <div class="mb-2">
+        <h4 class="mb-1" style="font-size:16px;font-weight:600;">Tasks</h4>
+        <p class="mb-2" style="font-size:12px;color:var(--color-text-muted);">Add at least one task for this project. Task deadlines must be after the project start date (at least 1 day after) and up to the project deadline (inclusive), and not in the past.</p>
+        <div id="tasks-validation-message" class="alert alert-danger d-none" role="alert" style="font-size:13px;padding:10px;margin-bottom:10px;">
+            <strong>⚠️ At least one task is required.</strong> Please add a task before submitting the form.
+        </div>
+        <button type="button" id="add-task-btn" style="border:1.5px dashed var(--color-border);border-radius:var(--radius-md);width:100%;padding:10px;color:var(--color-primary);font-size:13px;background:none;">Add Task</button>
+    </div>
+    <div id="tasks-container">
+        @for (var i = 0; i < Model.PendingTasks.Count; i++)
+        {
+            ViewData["TaskIndex"] = i;
+            ViewData["Developers"] = Model.Developers;
+            ViewData["MinTaskDeadline"] = Model.StartDate.AddDays(1).ToString("yyyy-MM-dd");
+            ViewData["MaxTaskDeadline"] = Model.Deadline.ToString("yyyy-MM-dd");
+            <partial name="_CreateTaskRow" model="Model.PendingTasks[i]" />
+        }
+    </div>
+
+    <button type="submit" style="background:var(--color-primary);color:#fff;border:none;padding:9px 22px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;">Save</button>
+    <a asp-action="Index" style="border:1px solid var(--color-border);color:var(--color-text-secondary);padding:9px 22px;border-radius:var(--radius-sm);font-size:13px;text-decoration:none;">Cancel</a>
+</form>
+
+<div id="task-row-template" class="d-none">
+    @{
+        ViewData["TaskIndex"] = "__INDEX__";
+        ViewData["Developers"] = Model.Developers;
+        ViewData["MinTaskDeadline"] = Model.StartDate.AddDays(1).ToString("yyyy-MM-dd");
+        ViewData["MaxTaskDeadline"] = Model.Deadline.ToString("yyyy-MM-dd");
+    }
+    @await Html.PartialAsync("_TaskFormRow")
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const addTaskButton = document.getElementById('add-task-btn');
+            const tasksContainer = document.getElementById('tasks-container');
+            const taskRowTemplate = document.getElementById('task-row-template');
+            const validationMessage = document.getElementById('tasks-validation-message');
+            const createForm = document.querySelector('form[action*="Create"]') || document.querySelector('form');
+            const projectStartDateInput = document.querySelector('input[name="StartDate"]');
+            const projectDeadlineInput = document.querySelector('input[name="Deadline"]');
+            let nextTaskIndex = @Model.PendingTasks.Count;
+
+            function updateTaskValidation() {
+                const taskRows = tasksContainer.querySelectorAll('.task-row');
+                if (taskRows.length === 0) {
+                    validationMessage.classList.remove('d-none');
+                } else {
+                    validationMessage.classList.add('d-none');
+                }
+            }
+
+            function updateTaskDeadlineConstraints() {
+                const startDate = projectStartDateInput?.value;
+                const deadline = projectDeadlineInput?.value;
+                
+                if (!startDate || !deadline) {
+                    return;
+                }
+
+                // Calculate min date (start date + 1 day)
+                const startDateObj = new Date(startDate);
+                startDateObj.setDate(startDateObj.getDate() + 1);
+                const minTaskDate = startDateObj.toISOString().split('T')[0];
+
+                // Max date is the project deadline (exact day)
+                const maxTaskDate = deadline;
+
+                // Update all task deadline inputs
+                const taskDeadlineInputs = tasksContainer.querySelectorAll('input[name*="Deadline"]');
+                taskDeadlineInputs.forEach(function(input) {
+                    input.setAttribute('min', minTaskDate);
+                    input.setAttribute('max', maxTaskDate);
+                });
+
+                // Update the template as well
+                const templateDeadlineInput = taskRowTemplate.querySelector('input[name*="Deadline"]');
+                if (templateDeadlineInput) {
+                    templateDeadlineInput.setAttribute('min', minTaskDate);
+                    templateDeadlineInput.setAttribute('max', maxTaskDate);
+                }
+            }
+
+            function addTaskRow() {
+                const rowHtml = taskRowTemplate.innerHTML.replaceAll('__INDEX__', nextTaskIndex.toString());
+                tasksContainer.insertAdjacentHTML('beforeend', rowHtml);
+                nextTaskIndex += 1;
+                updateTaskValidation();
+                updateTaskDeadlineConstraints();
+            }
+
+            addTaskButton.addEventListener('click', addTaskRow);
+
+            tasksContainer.addEventListener('click', function (event) {
+                const target = event.target;
+                if (!(target instanceof HTMLElement) || !target.classList.contains('remove-task-btn')) {
+                    return;
+                }
+
+                const row = target.closest('.task-row');
+                if (row) {
+                    row.remove();
+                    updateTaskValidation();
+                }
+            });
+
+            createForm.addEventListener('submit', function (event) {
+                const taskRows = tasksContainer.querySelectorAll('.task-row');
+                if (taskRows.length === 0) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    updateTaskValidation();
+                    
+                    // Scroll to the validation message
+                    validationMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Hide loading overlay if it was shown
+                    const loadingOverlay = document.getElementById('globalLoadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.remove('d-flex');
+                        loadingOverlay.classList.add('d-none');
+                    }
+                    
+                    return false;
+                }
+            });
+
+            // Listen to changes in project dates
+            if (projectStartDateInput) {
+                projectStartDateInput.addEventListener('change', updateTaskDeadlineConstraints);
+            }
+            if (projectDeadlineInput) {
+                projectDeadlineInput.addEventListener('change', updateTaskDeadlineConstraints);
+            }
+
+            // Initial validation check and constraint update
+            updateTaskValidation();
+            updateTaskDeadlineConstraints();
+        })();
+    </script>
+}

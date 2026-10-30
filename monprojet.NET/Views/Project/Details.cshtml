@@ -1,0 +1,289 @@
+@model ProjectDetailViewModel
+@{
+    ViewData["Title"] = "Project Details";
+
+    var statusBadgeClass = Model.Status switch
+    {
+        ProjectManager.Core.Enums.ProjectStatus.Completed => "background:var(--color-success-bg);color:var(--color-success);",
+        ProjectManager.Core.Enums.ProjectStatus.InProgress => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+        ProjectManager.Core.Enums.ProjectStatus.Late => "background:var(--color-danger-bg);color:var(--color-danger);",
+        _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+    };
+
+    string deadlineChipStyle;
+    if (Model.DaysRemaining < 0)
+    {
+        deadlineChipStyle = "background:var(--color-danger-bg);color:var(--color-danger);border-color:var(--color-danger-bg);";
+    }
+    else if (Model.DaysRemaining <= 3)
+    {
+        deadlineChipStyle = "background:var(--color-warning-bg);color:var(--color-warning);border-color:var(--color-warning-bg);";
+    }
+    else
+    {
+        deadlineChipStyle = "background:var(--color-bg);color:var(--color-text-secondary);border-color:var(--color-border);";
+    }
+
+    string daysStyle;
+    if (Model.DaysRemaining < 0)
+    {
+        daysStyle = "color:var(--color-danger);";
+    }
+    else if (Model.DaysRemaining <= 7)
+    {
+        daysStyle = "color:var(--color-warning);";
+    }
+    else
+    {
+        daysStyle = "color:var(--color-primary);";
+    }
+}
+
+@if (TempData["TaskError"] is string taskError)
+{
+    <div class="alert alert-danger">@taskError</div>
+}
+
+@if (TempData["NoteError"] is string noteError)
+{
+    <div class="alert alert-danger">@noteError</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0" style="font-size:22px;font-weight:700;">@Model.Name</h2>
+    <div class="d-flex align-items-center gap-2">
+        <a asp-controller="Project" asp-action="Team" asp-route-id="@Model.ProjectId" style="border:1px solid var(--color-border);padding:5px 12px;border-radius:var(--radius-sm);font-size:12px;text-decoration:none;color:var(--color-text-secondary);">Team</a>
+        <span style="@statusBadgeClass border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@Model.Status</span>
+    </div>
+</div>
+
+<div class="surface-panel mb-3" style="padding:18px 20px;">
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;">
+        <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);">Description</div>
+            <div style="font-size:13px;color:var(--color-text-primary);">@Model.Description</div>
+        </div>
+        <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);">Client</div>
+            <div style="font-size:13px;color:var(--color-text-primary);">@Model.ClientName</div>
+        </div>
+        <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);">Senior Developer</div>
+            <div style="font-size:13px;color:var(--color-text-primary);">@Model.SeniorDevName</div>
+        </div>
+        <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);">Schedule</div>
+            <div class="d-flex flex-wrap gap-2">
+                <span style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-full);padding:3px 10px;font-size:11px;">Start: @Model.StartDate.ToShortDateString()</span>
+                @if (Model.EndDate.HasValue)
+                {
+                    <span style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-full);padding:3px 10px;font-size:11px;">End: @Model.EndDate.Value.ToShortDateString()</span>
+                }
+                else
+                {
+                    <span style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-full);padding:3px 10px;font-size:11px;">End: —</span>
+                }
+                <span style="@deadlineChipStyle border:1px solid;border-radius:var(--radius-full);padding:3px 10px;font-size:11px;">Deadline: @Model.Deadline.ToShortDateString()</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="surface-panel mb-3" style="padding:18px 20px;">
+    <div class="row g-3 align-items-center">
+        <div class="col-12 col-md-4 text-center">
+            <div style="font-size:36px;font-weight:700;color:var(--color-primary);line-height:1;">@Model.ProgressPercentage.ToString("0.##")%</div>
+            <div style="font-size:12px;color:var(--color-text-muted);">Project Progress</div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div style="height:10px;background:var(--color-border);border-radius:8px;overflow:hidden;">
+                <div style="height:100%;background:var(--color-primary);width:@Model.ProgressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;border-radius:8px;transition:width 600ms ease-out;"></div>
+            </div>
+            <div style="font-size:12px;color:var(--color-text-muted);margin-top:6px;">@Model.CompletedTasks tasks completed / @Model.TotalTasks total</div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div style="font-size:12px;color:var(--color-text-muted);">Days Remaining</div>
+            @if (Model.DaysRemaining >= 0)
+            {
+                <div style="font-size:18px;font-weight:600;@daysStyle">@Model.DaysRemaining day(s)</div>
+            }
+            else
+            {
+                <div style="font-size:18px;font-weight:600;@daysStyle">@Math.Abs(Model.DaysRemaining) day(s) overdue</div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model.CanRate)
+{
+    <div class="surface-panel mb-3">
+        <div class="panel-header">Your Rating</div>
+        <div class="p-3">
+            <form asp-action="Rate" asp-route-id="@Model.ProjectId" method="post" class="d-flex flex-wrap align-items-center gap-2">
+                @Html.AntiForgeryToken()
+                <label for="projectRating" class="mb-0">Rate this project</label>
+                <select id="projectRating" name="rating" style="max-width:160px;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;">
+                    @for (var value = 1; value <= 5; value++)
+                    {
+                        <option value="@value" selected="@(Model.ClientRating == value ? "selected" : null)">@value / 5</option>
+                    }
+                </select>
+                <button type="submit" style="background:var(--color-primary);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;">Save Rating</button>
+                <span class="text-muted small">Current: @(Model.ClientRating?.ToString() ?? "Not rated")</span>
+            </form>
+        </div>
+    </div>
+}
+
+<div class="surface-panel mb-3" id="project-messages">
+    <div class="panel-header">Project Messages</div>
+    <div class="p-3">
+        <form asp-action="AddNote" asp-route-id="@Model.ProjectId" method="post" class="d-flex flex-column gap-2">
+            @Html.AntiForgeryToken()
+            <textarea name="message" rows="3" style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;resize:vertical;" placeholder="Write a message..."></textarea>
+            <div>
+                <button type="submit" style="background:var(--color-primary);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;">Send</button>
+            </div>
+        </form>
+
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:12px;">
+            @if (!Model.Notes.Any())
+            {
+                <div class="text-muted" style="font-size:13px;">No messages yet.</div>
+            }
+            else
+            {
+                @foreach (var note in Model.Notes)
+                {
+                    <div style="border:1px solid var(--color-border);border-radius:var(--radius-md);padding:10px 12px;">
+                        <div class="d-flex justify-content-between align-items-center" style="font-size:12px;color:var(--color-text-muted);">
+                            <span>@note.AuthorName</span>
+                            <span>@note.CreatedAt.ToString("g")</span>
+                        </div>
+                        <div style="font-size:13px;color:var(--color-text-primary);margin-top:6px;white-space:pre-wrap;">@note.Message</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<div class="surface-panel" style="overflow:hidden;">
+    <div class="panel-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span>Tasks</span>
+        <div class="d-flex gap-2">
+            <select id="statusFilter" style="border:1px solid var(--color-border);border-radius:var(--radius-full);padding:4px 10px;font-size:12px;">
+                <option value="All">All Statuses</option>
+                <option value="ToDo">ToDo</option>
+                <option value="InProgress">InProgress</option>
+                <option value="Completed">Completed</option>
+            </select>
+            <select id="priorityFilter" style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:6px 10px;font-size:12px;">
+                <option value="All">All Priorities</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+            </select>
+        </div>
+    </div>
+    <div>
+        <div class="table-responsive">
+            <table class="modern-table" id="projectTasksTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                        @if (User.IsInRole("SeniorDev"))
+                        {
+                            <th>Actions</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Tasks.Any())
+                    {
+                        <tr>
+                            <td colspan="@(User.IsInRole("SeniorDev") ? 5 : 4)" class="text-center text-muted">No tasks assigned.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var task in Model.Tasks)
+                        {
+                            var priorityClass = task.Priority switch
+                            {
+                                ProjectManager.Core.Enums.TaskPriority.High => "background:var(--color-warning-bg);color:var(--color-warning);",
+                                ProjectManager.Core.Enums.TaskPriority.Medium => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                                ProjectManager.Core.Enums.TaskPriority.Low => "background:var(--color-success-bg);color:var(--color-success);",
+                                _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+                            };
+
+                            <tr data-status="@task.Status" data-priority="@task.Priority">
+                                <td>@task.Title</td>
+                                <td><span style="@priorityClass border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@task.Priority</span></td>
+                                <td>@task.Deadline.ToShortDateString()</td>
+                                <td>@task.Status</td>
+                                @if (User.IsInRole("SeniorDev"))
+                                {
+                                    <td>
+                                        <a asp-controller="Task" asp-action="EditTask" asp-route-id="@task.TaskId" style="border:1px solid var(--color-border);color:var(--color-text-secondary);padding:3px 10px;border-radius:var(--radius-sm);font-size:12px;text-decoration:none;">Edit</a>
+                                        <form asp-controller="Task" asp-action="DeleteTask" asp-route-id="@task.TaskId" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" style="border:1px solid var(--color-danger-bg);color:var(--color-danger);padding:3px 10px;border-radius:var(--radius-sm);font-size:12px;background:transparent;" data-confirm="Delete this task?">Delete</button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    @if (User.IsInRole("SeniorDev"))
+    {
+        <a asp-controller="Project" asp-action="Index" style="border:1px solid var(--color-border);color:var(--color-text-secondary);padding:6px 12px;border-radius:var(--radius-sm);text-decoration:none;">Back</a>
+    }
+    else if (User.IsInRole("Developer"))
+    {
+        <a asp-controller="Dashboard" asp-action="Developer" style="border:1px solid var(--color-border);color:var(--color-text-secondary);padding:6px 12px;border-radius:var(--radius-sm);text-decoration:none;">Back</a>
+    }
+    else
+    {
+        <a asp-controller="Dashboard" asp-action="Client" style="border:1px solid var(--color-border);color:var(--color-text-secondary);padding:6px 12px;border-radius:var(--radius-sm);text-decoration:none;">Back</a>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const statusFilter = document.getElementById('statusFilter');
+            const priorityFilter = document.getElementById('priorityFilter');
+            const rows = document.querySelectorAll('#projectTasksTable tbody tr[data-status]');
+
+            function applyFilters() {
+                const selectedStatus = statusFilter.value;
+                const selectedPriority = priorityFilter.value;
+
+                rows.forEach(row => {
+                    const rowStatus = row.dataset.status;
+                    const rowPriority = row.dataset.priority;
+
+                    const statusMatch = selectedStatus === 'All' || rowStatus === selectedStatus;
+                    const priorityMatch = selectedPriority === 'All' || rowPriority === selectedPriority;
+
+                    row.style.display = statusMatch && priorityMatch ? '' : 'none';
+                });
+            }
+
+            statusFilter.addEventListener('change', applyFilters);
+            priorityFilter.addEventListener('change', applyFilters);
+        })();
+    </script>
+}

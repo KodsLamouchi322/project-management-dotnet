@@ -1,0 +1,96 @@
+@model monprojet.NET.Models.Notification.NotificationBellViewModel
+
+@if (Model.CanViewNotifications)
+{
+    <li class="nav-item dropdown" id="notification-bell-root">
+        @Html.AntiForgeryToken()
+        <a class="nav-link text-dark position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span aria-hidden="true">🔔</span>
+            <span id="notification-badge"
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger @(Model.UnreadCount == 0 ? "d-none" : string.Empty)">
+                @Model.UnreadCount
+            </span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end p-0" style="min-width: 340px;">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                <strong>Notifications</strong>
+                <button id="mark-all-read-btn" type="button" class="btn btn-sm btn-link">Mark all as read</button>
+            </div>
+
+            <div id="notification-items" class="list-group list-group-flush" style="max-height: 320px; overflow-y: auto;">
+                @if (!Model.Items.Any())
+                {
+                    <div class="px-3 py-2 text-muted">No unread notifications.</div>
+                }
+                else
+                {
+                    @foreach (var item in Model.Items)
+                    {
+                        <div class="list-group-item">
+                            <div class="small fw-semibold">@item.Message</div>
+                            <div class="small text-muted">@item.TimeAgo</div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="px-3 py-2 border-top text-end">
+                <a asp-controller="Notifications" asp-action="Index">View all</a>
+            </div>
+        </div>
+    </li>
+
+    <script>
+        (function () {
+            const root = document.getElementById('notification-bell-root');
+            if (!root) {
+                return;
+            }
+
+            const badge = document.getElementById('notification-badge');
+            const markAllButton = document.getElementById('mark-all-read-btn');
+            const token = root.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            async function refreshUnreadCount() {
+                try {
+                    const response = await fetch('@Url.Action("UnreadCount", "Notifications")', { credentials: 'same-origin' });
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const data = await response.json();
+                    const count = Number(data.unreadCount || 0);
+                    badge.textContent = count;
+                    badge.classList.toggle('d-none', count === 0);
+                }
+                catch {
+                }
+            }
+
+            markAllButton?.addEventListener('click', async function () {
+                if (!token) {
+                    return;
+                }
+
+                const formData = new URLSearchParams();
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('@Url.Action("MarkAllAsRead", "Notifications")', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+
+                if (response.ok) {
+                    const itemsContainer = document.getElementById('notification-items');
+                    itemsContainer.innerHTML = '<div class="px-3 py-2 text-muted">No unread notifications.</div>';
+                    badge.textContent = '0';
+                    badge.classList.add('d-none');
+                }
+            });
+
+            setInterval(refreshUnreadCount, 30000);
+        })();
+    </script>
+}

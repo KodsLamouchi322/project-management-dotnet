@@ -1,0 +1,62 @@
+@model IEnumerable<ProjectListItemViewModel>
+@{
+    ViewData["Title"] = "Projects";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 style="font-size:22px;font-weight:700;margin:0;">Projects</h2>
+    <a asp-action="Create" style="background:var(--color-primary);color:#fff;border:none;padding:7px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;text-decoration:none;">Create Project</a>
+</div>
+
+@if (TempData["Error"] is string errorMessage)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="surface-panel" style="overflow:hidden;">
+<table class="modern-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Progress %</th>
+            <th>Task Count</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var project in Model)
+    {
+        var statusStyle = project.Status switch
+        {
+            ProjectManager.Core.Enums.ProjectStatus.InProgress => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+            ProjectManager.Core.Enums.ProjectStatus.Completed => "background:var(--color-success-bg);color:var(--color-success);",
+            ProjectManager.Core.Enums.ProjectStatus.Late => "background:var(--color-danger-bg);color:var(--color-danger);",
+            _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+        };
+
+        <tr>
+            <td>@project.Name</td>
+            <td><span style="@statusStyle border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@project.Status</span></td>
+            <td>
+                <div class="d-inline-flex align-items-center" style="gap:8px;">
+                    <span style="display:inline-block;width:60px;height:4px;background:var(--color-border);border-radius:4px;overflow:hidden;">
+                        <span style="display:block;height:100%;background:var(--color-primary);width:@project.ProgressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"></span>
+                    </span>
+                    <span>@project.ProgressPercentage.ToString("0.##")%</span>
+                </div>
+            </td>
+            <td>@project.TaskCount</td>
+            <td>
+                <a asp-action="Details" asp-route-id="@project.Id" style="border:1px solid var(--color-border);color:var(--color-text-secondary);padding:3px 10px;border-radius:var(--radius-sm);font-size:12px;text-decoration:none;">Details</a>
+                <a asp-action="Edit" asp-route-id="@project.Id" style="border:1px solid var(--color-border);color:var(--color-text-secondary);padding:3px 10px;border-radius:var(--radius-sm);font-size:12px;text-decoration:none;">Edit</a>
+                <form asp-action="Delete" asp-route-id="@project.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" style="border:1px solid var(--color-danger-bg);color:var(--color-danger);padding:3px 10px;border-radius:var(--radius-sm);font-size:12px;background:transparent;" data-confirm="Delete this project?">Delete</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>

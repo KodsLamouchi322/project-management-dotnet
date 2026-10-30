@@ -1,0 +1,266 @@
+@model SeniorDevDashboardViewModel
+@{
+    ViewData["Title"] = "SeniorDev Dashboard";
+    ViewData["Breadcrumb"] = "Dashboard > SeniorDev";
+    Layout = "_SidebarLayout";
+}
+
+<h2 class="mb-4">SeniorDev Dashboard</h2>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-lg-6">
+        <div class="surface-panel h-100" style="border-left:3px solid var(--color-danger);">
+            <div class="panel-header" style="color:var(--color-danger);background:var(--color-danger-bg);text-transform:uppercase;letter-spacing:.05em;font-size:12px;">Late Projects</div>
+            <div>
+                @if (!Model.LateProjects.Any())
+                {
+                    <p class="text-muted mb-0 p-3">No late projects.</p>
+                }
+                else
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var alert in Model.LateProjects)
+                        {
+                            <li style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--color-border);">
+                                <span>@alert.ProjectName - @alert.Message</span>
+                                <a asp-controller="Project" asp-action="Details" asp-route-id="@alert.ProjectId" style="font-size:12px;color:var(--color-danger);text-decoration:none;border:1px solid var(--color-danger-bg);padding:3px 10px;border-radius:var(--radius-sm);">View</a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="surface-panel h-100" style="border-left:3px solid var(--color-warning);">
+            <div class="panel-header" style="color:var(--color-warning);background:var(--color-warning-bg);text-transform:uppercase;letter-spacing:.05em;font-size:12px;">Upcoming Deadlines (3 days)</div>
+            <div>
+                @if (!Model.UpcomingDeadlineProjects.Any())
+                {
+                    <p class="text-muted mb-0 p-3">No deadlines in next 3 days.</p>
+                }
+                else
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var alert in Model.UpcomingDeadlineProjects)
+                        {
+                            <li style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--color-border);">
+                                <span>@alert.ProjectName - @alert.Message</span>
+                                <a asp-controller="Project" asp-action="Details" asp-route-id="@alert.ProjectId" style="font-size:12px;color:var(--color-warning);text-decoration:none;border:1px solid var(--color-warning-bg);padding:3px 10px;border-radius:var(--radius-sm);">View</a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="surface-panel mb-4">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <span>My Projects</span>
+        <input id="projectSearchInput" type="search" style="max-width:280px;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;" placeholder="Search by project name..." />
+    </div>
+    <div class="p-3">
+        @if (!Model.Projects.Any())
+        {
+            <p class="text-muted mb-0">No assigned projects.</p>
+        }
+        else
+        {
+            <div class="row g-3" id="projectCardGrid">
+                @foreach (var project in Model.Projects)
+                {
+                    <div class="col-12 col-md-6 col-xl-4 project-card" data-project-name="@project.Name.ToLowerInvariant()">
+                        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px 18px;height:100%;">
+                            <div style="font-size:14px;font-weight:600;margin-bottom:6px;">@project.Name</div>
+                            @{
+                                var statusStyle = project.Status switch
+                                {
+                                    ProjectManager.Core.Enums.ProjectStatus.InProgress => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                                    ProjectManager.Core.Enums.ProjectStatus.Completed => "background:var(--color-success-bg);color:var(--color-success);",
+                                    ProjectManager.Core.Enums.ProjectStatus.Late => "background:var(--color-danger-bg);color:var(--color-danger);",
+                                    _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+                                };
+                            }
+                            <span style="@statusStyle border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@project.Status</span>
+                            <div style="height:5px;background:var(--color-border);border-radius:4px;margin:8px 0;overflow:hidden;">
+                                <div style="height:100%;background:var(--color-primary);width:@project.ProgressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;border-radius:4px;"></div>
+                            </div>
+                            <div style="font-size:12px;color:var(--color-text-muted);">@project.CompletedTasks / @project.TotalTasks tasks</div>
+                            <a asp-controller="Project" asp-action="Details" asp-route-id="@project.ProjectId" style="font-size:12px;color:var(--color-primary);border:1px solid var(--color-primary-mid);padding:4px 12px;border-radius:var(--radius-sm);margin-top:10px;display:inline-block;text-decoration:none;">Details</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-xl-4">
+        <div class="surface-panel h-100">
+            <div class="panel-header">Top Developers This Month</div>
+            <div class="p-3">
+                @if (!Model.TopDevelopers.Any())
+                {
+                    <p class="text-muted mb-0">No developer data for this month.</p>
+                }
+                else
+                {
+                    <div>
+                        @for (var index = 0; index < Model.TopDevelopers.Count; index++)
+                        {
+                            var developer = Model.TopDevelopers[index];
+                            var scoreStyle = developer.ScorePercentage switch
+                            {
+                                >= 80 => "background:var(--color-success-bg);color:var(--color-success);",
+                                >= 50 => "background:var(--color-warning-bg);color:var(--color-warning);",
+                                _ => "background:var(--color-danger-bg);color:var(--color-danger);"
+                            };
+
+                            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--color-border);">
+                                <span style="width:20px;height:20px;border-radius:50%;background:var(--color-bg);border:1px solid var(--color-border);font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">@(index + 1)</span>
+                                <div style="flex:1;">
+                                    <div style="font-size:13px;font-weight:500;">@developer.FullName</div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);">@developer.CompletedTaskCount completed task(s)</div>
+                                </div>
+                                <span style="@scoreStyle border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@developer.ScorePercentage.ToString("0.##")%</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-8">
+        <div class="surface-panel h-100">
+            <div class="panel-header">Analytics</div>
+            <div class="p-3">
+                <div class="row g-4">
+                    <div class="col-12 col-lg-4">
+                        <h6>Task Status Distribution</h6>
+                        <canvas id="taskStatusChart"></canvas>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <h6>Top Developers by Monthly Score</h6>
+                        <canvas id="topDevelopersChart"></canvas>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <h6>Project Progress Over Time</h6>
+                        <canvas id="projectProgressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const taskStatusData = @Html.Raw(Model.TaskStatusChartJson);
+        const topDevelopersData = @Html.Raw(Model.TopDevelopersChartJson);
+        const projectProgressData = @Html.Raw(Model.ProjectProgressChartJson);
+
+        if (taskStatusData?.datasets?.[0]) {
+            taskStatusData.datasets[0].backgroundColor = ['#1D9E75', '#9FE1CB', '#E1F5EE'];
+        }
+        if (topDevelopersData?.datasets?.[0]) {
+            topDevelopersData.datasets[0].backgroundColor = '#1D9E75';
+        }
+        if (projectProgressData?.datasets) {
+            projectProgressData.datasets = projectProgressData.datasets.map(function (dataset) {
+                return {
+                    ...dataset,
+                    borderColor: '#1D9E75',
+                    backgroundColor: 'rgba(29,158,117,.1)'
+                };
+            });
+        }
+
+        new Chart(document.getElementById('taskStatusChart'), {
+            type: 'doughnut',
+            data: taskStatusData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#6C757D',
+                            font: { family: "'Inter', sans-serif", size: 12 }
+                        }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('topDevelopersChart'), {
+            type: 'bar',
+            data: topDevelopersData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#6C757D',
+                            font: { family: "'Inter', sans-serif", size: 12 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#E9ECEF' },
+                        ticks: { color: '#6C757D', font: { family: "'Inter', sans-serif", size: 12 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#6C757D', font: { family: "'Inter', sans-serif", size: 12 } }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('projectProgressChart'), {
+            type: 'line',
+            data: projectProgressData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#6C757D',
+                            font: { family: "'Inter', sans-serif", size: 12 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#E9ECEF' },
+                        ticks: { color: '#6C757D', font: { family: "'Inter', sans-serif", size: 12 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#6C757D', font: { family: "'Inter', sans-serif", size: 12 } }
+                    }
+                }
+            }
+        });
+
+        const projectSearchInput = document.getElementById('projectSearchInput');
+        const projectCards = document.querySelectorAll('.project-card');
+        projectSearchInput?.addEventListener('input', function () {
+            const query = this.value.trim().toLowerCase();
+            projectCards.forEach(function (card) {
+                const projectName = card.getAttribute('data-project-name') || '';
+                card.style.display = projectName.includes(query) ? '' : 'none';
+            });
+        });
+    </script>
+}

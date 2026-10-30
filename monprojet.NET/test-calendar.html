@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Calendrier - Contraintes de Date</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .success {
+            background: #c8e6c9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test des Contraintes de Date</h1>
+    
+    <div class="form-group">
+        <label for="projectStart">Date de début du projet :</label>
+        <input type="date" id="projectStart" value="2026-05-12">
+    </div>
+    
+    <div class="form-group">
+        <label for="projectDeadline">Deadline du projet :</label>
+        <input type="date" id="projectDeadline" value="2026-05-14">
+    </div>
+    
+    <hr>
+    
+    <div class="form-group">
+        <label for="taskDeadline">Deadline de la tâche :</label>
+        <input type="date" id="taskDeadline">
+        <small id="constraints" style="color: #666;"></small>
+    </div>
+    
+    <div class="info">
+        <h3>Règles de validation :</h3>
+        <ul>
+            <li>La deadline de la tâche doit être <strong>entre</strong> la date de début et la deadline du projet</li>
+            <li>La deadline de la tâche <strong>NE PEUT PAS</strong> être le même jour que la deadline du projet</li>
+            <li>La deadline de la tâche doit être <strong>au moins 1 jour avant</strong> la deadline du projet</li>
+        </ul>
+    </div>
+    
+    <div id="result" style="margin-top: 20px;"></div>
+    
+    <script>
+        const projectStart = document.getElementById('projectStart');
+        const projectDeadline = document.getElementById('projectDeadline');
+        const taskDeadline = document.getElementById('taskDeadline');
+        const constraints = document.getElementById('constraints');
+        const result = document.getElementById('result');
+        
+        function updateConstraints() {
+            const startDate = projectStart.value;
+            const deadline = projectDeadline.value;
+            
+            if (!startDate || !deadline) {
+                return;
+            }
+            
+            // Calculate max date (one day before project deadline)
+            const deadlineDate = new Date(deadline);
+            deadlineDate.setDate(deadlineDate.getDate() - 1);
+            const maxDate = deadlineDate.toISOString().split('T')[0];
+            
+            // Update task deadline constraints
+            taskDeadline.setAttribute('min', startDate);
+            taskDeadline.setAttribute('max', maxDate);
+            
+            // Update info text
+            constraints.textContent = `Dates valides : du ${startDate} au ${maxDate}`;
+            
+            // Validate current task deadline
+            validateTaskDeadline();
+        }
+        
+        function validateTaskDeadline() {
+            const taskDate = taskDeadline.value;
+            const startDate = projectStart.value;
+            const deadline = projectDeadline.value;
+            
+            if (!taskDate) {
+                result.innerHTML = '';
+                return;
+            }
+            
+            const task = new Date(taskDate);
+            const start = new Date(startDate);
+            const end = new Date(deadline);
+            
+            // Calculate max allowed date
+            const maxAllowed = new Date(end);
+            maxAllowed.setDate(maxAllowed.getDate() - 1);
+            
+            if (task < start) {
+                result.innerHTML = '<div style="background: #ffcdd2; padding: 10px; border-radius: 4px;">❌ Erreur : La deadline de la tâche ne peut pas être avant la date de début du projet</div>';
+            } else if (task >= end) {
+                result.innerHTML = '<div style="background: #ffcdd2; padding: 10px; border-radius: 4px;">❌ Erreur : La deadline de la tâche doit être avant la deadline du projet (pas le même jour)</div>';
+            } else if (task > maxAllowed) {
+                result.innerHTML = '<div style="background: #ffcdd2; padding: 10px; border-radius: 4px;">❌ Erreur : La deadline de la tâche doit être au moins 1 jour avant la deadline du projet</div>';
+            } else {
+                result.innerHTML = '<div class="success">✅ Date valide ! La tâche peut avoir cette deadline.</div>';
+            }
+        }
+        
+        projectStart.addEventListener('change', updateConstraints);
+        projectDeadline.addEventListener('change', updateConstraints);
+        taskDeadline.addEventListener('change', validateTaskDeadline);
+        
+        // Initial setup
+        updateConstraints();
+    </script>
+</body>
+</html>

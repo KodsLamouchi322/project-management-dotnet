@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="NavMessages" xml:space="preserve">
+    <value>Messages</value>
+  </data>
+  <data name="MessagesPageTitle" xml:space="preserve">
+    <value>Project Messages</value>
+  </data>
+  <data name="MessagesEmpty" xml:space="preserve">
+    <value>No projects available.</value>
+  </data>
+  <data name="MessagesOpen" xml:space="preserve">
+    <value>Open messages</value>
+  </data>
+  <data name="MessagesLastMessage" xml:space="preserve">
+    <value>Last message</value>
+  </data>
+  <data name="MessagesNone" xml:space="preserve">
+    <value>No messages yet.</value>
+  </data>
+  <data name="ProjectStatusChangedNotification" xml:space="preserve">
+    <value>Project {0} status changed to {1}.</value>
+  </data>
+  <data name="ProjectProgressNotification" xml:space="preserve">
+    <value>Project {0} reached {1}% progress.</value>
+  </data>
+</root>

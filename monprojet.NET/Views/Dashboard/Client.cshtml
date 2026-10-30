@@ -1,0 +1,53 @@
+@model List<ProjectDashboardViewModel>
+@{
+    ViewData["Title"] = "Client Dashboard";
+    ViewData["Breadcrumb"] = "Dashboard > Client";
+    Layout = "_SidebarLayout";
+}
+
+<h2 class="mb-4">Client Dashboard</h2>
+
+@if (!Model.Any())
+{
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px;">No projects available.</div>
+}
+else
+{
+    <div class="row g-3">
+        @for (var loopIndex = 0; loopIndex < Model.Count; loopIndex++)
+        {
+            var project = Model[loopIndex];
+            var statusBadgeClass = project.Status switch
+            {
+                ProjectManager.Core.Enums.ProjectStatus.Completed => "background:var(--color-success-bg);color:var(--color-success);",
+                ProjectManager.Core.Enums.ProjectStatus.InProgress => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                ProjectManager.Core.Enums.ProjectStatus.Late => "background:var(--color-danger-bg);color:var(--color-danger);",
+                _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+            };
+
+            <div class="col-12 col-md-6 col-xl-4">
+                <div style="--i:@loopIndex;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:18px 20px;display:flex;flex-direction:column;gap:10px;animation:fadeInUp 300ms ease both;animation-delay:calc(var(--i,0) * 60ms);height:100%;">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="mb-0" style="font-size:16px;font-weight:600;">@project.Name</h5>
+                            <span style="@statusBadgeClass border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@project.Status</span>
+                        </div>
+
+                        <p class="mb-0" style="font-size:13px;color:var(--color-text-secondary);">@project.Description</p>
+
+                        <div>
+                            <div style="height:6px;background:var(--color-border);border-radius:4px;overflow:hidden;">
+                                <div style="height:100%;background:var(--color-primary);border-radius:4px;width:@project.ProgressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
+                            </div>
+                            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:4px;">@project.ProgressPercentage.ToString("0.##")%</div>
+                        </div>
+
+                        <p class="mb-0" style="font-size:12px;color:var(--color-text-muted);">@project.CompletedTasks tasks completed / @project.TotalTasks total</p>
+
+                        <a asp-controller="Project" asp-action="Details" asp-route-id="@project.ProjectId" style="border:1px solid var(--color-primary-mid);color:var(--color-primary);border-radius:var(--radius-sm);padding:6px 14px;font-size:12px;font-weight:500;margin-top:auto;display:inline-block;text-decoration:none;">
+                            View details
+                        </a>
+                </div>
+            </div>
+        }
+    </div>
+}

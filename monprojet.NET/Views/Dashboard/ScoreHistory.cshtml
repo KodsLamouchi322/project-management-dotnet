@@ -1,0 +1,137 @@
+@model ScoreHistoryViewModel
+@{
+    ViewData["Title"] = "Score History";
+    ViewData["Breadcrumb"] = "Dashboard > Score History";
+    Layout = "_SidebarLayout";
+}
+
+<h2 class="mb-4">Score History</h2>
+
+<div class="surface-panel mb-4" style="overflow:hidden;">
+    <div class="panel-header">Monthly Score Trend (Last 6 Months)</div>
+    <div class="p-3">
+        <canvas id="scoreHistoryChart"></canvas>
+    </div>
+</div>
+
+<div class="surface-panel mb-4" style="overflow:hidden;">
+    <div class="panel-header">Summary</div>
+    <div>
+        <div class="table-responsive">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Tasks Assigned</th>
+                        <th>Tasks Completed</th>
+                        <th>Score %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.MonthlyScores)
+                    {
+                        <tr>
+                            <td>@item.MonthLabel</td>
+                            <td>@item.TasksAssigned</td>
+                            <td>@item.TasksCompleted</td>
+                            <td>@item.ScorePercentage.ToString("0.##")%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="surface-panel" style="overflow:hidden;">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <span>Task Breakdown</span>
+        <form method="get" asp-action="ScoreHistory" class="d-flex align-items-center gap-2">
+            <label for="monthFilter" class="mb-0">Month</label>
+            <select id="monthFilter" name="month" class="select-clean" style="max-width:180px;" onchange="this.form.submit()">
+                @foreach (var option in Model.MonthOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.SelectedMonth)">@option.Label</option>
+                }
+            </select>
+        </form>
+    </div>
+    <div class="p-3">
+        @if (!Model.SelectedMonthTasks.Any())
+        {
+            <p class="text-muted mb-0">No tasks assigned in selected month.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Deadline</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var task in Model.SelectedMonthTasks)
+                    {
+                        <tr>
+                            <td>@task.Title</td>
+                            <td>@task.ProjectName</td>
+                            <td>@task.Status</td>
+                            <td>@task.Priority</td>
+                            <td>@task.Deadline.ToShortDateString()</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Developer" style="border:1px solid var(--color-border);color:var(--color-text-secondary);padding:6px 12px;border-radius:var(--radius-sm);text-decoration:none;">Back</a>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const chartData = @Html.Raw(Model.LineChartDataJson);
+
+        if (chartData?.datasets?.[0]) {
+            chartData.datasets[0].borderColor = '#1D9E75';
+            chartData.datasets[0].backgroundColor = 'rgba(29,158,117,.1)';
+            chartData.datasets[0].tension = 0.4;
+            chartData.datasets[0].pointBackgroundColor = '#1D9E75';
+        }
+
+        new Chart(document.getElementById('scoreHistoryChart'), {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            font: { family: "'Inter',sans-serif", size: 12 },
+                            color: '#6C757D'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#E9ECEF' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    </script>
+}

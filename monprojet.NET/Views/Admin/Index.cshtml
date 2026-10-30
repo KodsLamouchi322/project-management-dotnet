@@ -1,0 +1,116 @@
+@model IEnumerable<AdminUserViewModel>
+@{
+    ViewData["Title"] = "User Management";
+    ViewData["Breadcrumb"] = "Admin > User Management";
+    Layout = "_SidebarLayout";
+
+    static string FormatRole(string role)
+        => role == "SeniorDev" ? "Senior Developer" : role;
+}
+
+<h2 style="font-size:22px;font-weight:700;margin-bottom:12px;">User Management</h2>
+
+@Html.AntiForgeryToken()
+
+<div class="surface-panel" style="overflow:hidden;">
+<table class="modern-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Current Role</th>
+            <th>Change Role</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var user in Model)
+    {
+        <tr id="user-row-@user.UserId">
+            <td>@user.FullName</td>
+            <td>@user.Email</td>
+            <td class="current-role">
+                @{
+                    var roleStyle = user.CurrentRole switch
+                    {
+                        "Client" => "background:var(--color-surface-hover);color:var(--color-text-secondary);",
+                        "Developer" => "background:var(--color-primary-light);color:var(--color-primary-dark);",
+                        "SeniorDev" => "background:var(--color-primary);color:#fff;",
+                        _ => "background:var(--color-surface-hover);color:var(--color-text-secondary);"
+                    };
+                }
+                <span style="@roleStyle border-radius:var(--radius-full);padding:2px 8px;font-size:11px;font-weight:500;">@FormatRole(user.CurrentRole)</span>
+            </td>
+            <td>
+                @if (user.CanChangeRole && user.AllowedNextRoles.Any())
+                {
+                    <div class="d-flex gap-2 align-items-center">
+                        <select class="role-select" data-user-id="@user.UserId" style="max-width:180px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:13px;padding:5px 10px;">
+                            <option value="">Select role</option>
+                            @foreach (var role in user.AllowedNextRoles)
+                            {
+                                <option value="@role">@FormatRole(role)</option>
+                            }
+                        </select>
+                        <button type="button" class="change-role-btn" data-user-id="@user.UserId" data-confirm="Change this user role?" style="background:var(--color-primary);color:white;border:none;padding:5px 14px;border-radius:var(--radius-sm);font-size:12px;">Update</button>
+                    </div>
+                }
+                else
+                {
+                    <span class="text-muted">No allowed transition</span>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const formatRole = (role) => role === 'SeniorDev' ? 'Senior Developer' : role;
+
+            document.querySelectorAll('.change-role-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const confirmationMessage = this.dataset.confirm || 'Change this user role?';
+                    if (!window.confirm(confirmationMessage)) {
+                        return;
+                    }
+
+                    const userId = this.dataset.userId;
+                    const row = document.getElementById(`user-row-${userId}`);
+                    const select = row.querySelector('.role-select');
+                    const newRole = select.value;
+
+                    if (!newRole) {
+                        alert('Please select a role.');
+                        return;
+                    }
+
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    $.ajax({
+                        url: '@Url.Action("ChangeRole", "Admin")',
+                        method: 'POST',
+                        data: {
+                            userId: userId,
+                            newRole: newRole,
+                            __RequestVerificationToken: token
+                        }
+                    }).done(function (response) {
+                        if (response.success) {
+                            row.querySelector('.current-role').innerText = formatRole(response.newRole);
+                            row.querySelector('td:last-child').innerHTML = '<span class="text-muted">No allowed transition</span>';
+                        }
+                        else {
+                            alert(response.message || 'Role update failed.');
+                        }
+                    }).fail(function (xhr) {
+                        const message = xhr.responseJSON?.message || 'Role update failed.';
+                        alert(message);
+                    });
+                });
+            });
+        })();
+    </script>
+}

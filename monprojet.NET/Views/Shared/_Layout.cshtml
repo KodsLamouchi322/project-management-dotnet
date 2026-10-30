@@ -1,0 +1,453 @@
+﻿@inject Microsoft.Extensions.Localization.IStringLocalizer<monprojet.NET.Resources.SharedResource> Localizer
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - monprojet.NET</title>
+    <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/monprojet.NET.styles.css" asp-append-version="true" />
+    <style>
+        .app-shell { min-height: 100vh; display: flex; background: var(--color-bg); }
+        .app-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 220px;
+            height: 100vh;
+            background: var(--color-surface);
+            border-right: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            z-index: 100;
+            transition: transform .2s ease;
+        }
+        .app-logo { padding: 0 16px 20px; display: flex; align-items: center; gap: 10px; }
+        .app-logo-mark { width: 26px; height: 26px; border-radius: 8px; background: var(--color-primary); display: flex; align-items: center; justify-content: center; }
+        .app-logo-mark::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #fff; }
+        .app-logo-text { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+        .app-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 10px; }
+        .app-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            transition: 150ms;
+        }
+        .app-nav-link:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
+        .app-nav-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-border); flex-shrink: 0; }
+        .app-nav-link.active { background: var(--color-primary-light); color: var(--color-primary); font-weight: 500; }
+        .app-nav-link.active .app-nav-dot { background: var(--color-primary); }
+
+        .sidebar-bottom { margin-top: auto; padding: 16px; border-top: 1px solid var(--color-border); }
+        .sidebar-user { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .sidebar-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--color-primary-light);
+            color: var(--color-primary-dark);
+            font-weight: 600;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar-username { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+        #darkModeToggle {
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-full);
+            padding: 4px 12px;
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            background: transparent;
+        }
+
+        .app-main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .app-topbar {
+            height: 52px;
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .app-page-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
+        .app-topbar-right { display: flex; align-items: center; gap: 10px; }
+        .app-logout-btn { border: none; background: none; color: var(--color-text-secondary); padding: 0; font-size: 13px; }
+
+        .app-breadcrumb-wrap { padding: 10px 28px 0; }
+        .app-breadcrumb-wrap .breadcrumb { margin-bottom: 0; font-size: 12px; color: var(--color-text-muted); }
+        .app-breadcrumb-wrap .breadcrumb-item,
+        .app-breadcrumb-wrap .breadcrumb-item a,
+        .app-breadcrumb-wrap .breadcrumb-item.active { color: var(--color-text-muted); text-decoration: none; }
+        .app-content { padding: 20px 28px 40px; flex: 1; }
+
+        .app-toast {
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+            border: none;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+        .app-toast-success { border-left: 4px solid var(--color-primary); }
+        .app-toast-danger { border-left: 4px solid var(--color-danger); }
+
+        .app-confirm-modal .modal-content { border-radius: var(--radius-lg); border: none; box-shadow: var(--shadow-md); }
+        .app-confirm-modal .modal-header { border-bottom: 1px solid var(--color-border); padding: 16px 20px; }
+        .app-confirm-modal .modal-title { font-size: 15px; font-weight: 600; }
+        .app-confirm-modal #confirmActionButton { background: var(--color-danger); border: none; border-radius: var(--radius-sm); }
+        .app-confirm-modal [data-bs-dismiss="modal"] { border-radius: var(--radius-sm); }
+
+        .app-mobile-menu-btn {
+            display: none;
+            border: 1px solid var(--color-border);
+            background: transparent;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            width: 34px;
+            height: 34px;
+            color: var(--color-text-secondary);
+        }
+        .app-sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .28);
+            opacity: 0;
+            pointer-events: none;
+            transition: .2s ease;
+            z-index: 90;
+        }
+
+        @@media (max-width: 767.98px) {
+            .app-mobile-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
+            .app-sidebar { transform: translateX(-100%); }
+            body.sidebar-open .app-sidebar { transform: translateX(0); }
+            body.sidebar-open .app-sidebar-overlay { opacity: 1; pointer-events: auto; }
+            .app-main { margin-left: 0; }
+            .app-topbar,
+            .app-breadcrumb-wrap,
+            .app-content { padding-left: 16px; padding-right: 16px; }
+        }
+    </style>
+</head>
+<body>
+    @{
+        var breadcrumbValue = ViewData["Breadcrumb"]?.ToString();
+        var breadcrumbParts = string.IsNullOrWhiteSpace(breadcrumbValue)
+            ? new[] { ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty, ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty }
+            : breadcrumbValue.Split('>', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+        var userName = User.Identity?.Name ?? "User";
+        var initials = string.Concat(userName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => part[0])).ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(initials))
+        {
+            initials = "U";
+        }
+    }
+
+    <div class="app-shell">
+        <div class="app-sidebar-overlay" id="appSidebarOverlay"></div>
+
+        <aside class="app-sidebar" id="appSidebar">
+            <div class="app-logo">
+                <div class="app-logo-mark"></div>
+                <span class="app-logo-text">ProjectFlow</span>
+            </div>
+
+            <nav class="app-nav">
+                @if (User.IsInRole("Admin"))
+                {
+                    var isAdminDashboardActive = currentController == "Dashboard" && currentAction == "Admin";
+                    var isUserMgmtActive = currentController == "Admin" && currentAction == "Index";
+                    <a asp-controller="Dashboard" asp-action="Admin" class="app-nav-link @(isAdminDashboardActive ? "active" : string.Empty)">
+                        <span class="app-nav-dot"></span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a asp-controller="Admin" asp-action="Index" class="app-nav-link @(isUserMgmtActive ? "active" : string.Empty)">
+                        <span class="app-nav-dot"></span>
+                        <span>User Management</span>
+                    </a>
+                }
+
+                @if (User.IsInRole("SeniorDev"))
+                {
+                    var isSeniorDashboardActive = currentController == "Dashboard" && currentAction == "SeniorDev";
+                    var isProjectsActive = currentController == "Project" && currentAction == "Index";
+
+                    <a asp-controller="Dashboard" asp-action="SeniorDev" class="app-nav-link @(isSeniorDashboardActive ? "active" : string.Empty)">
+                        <span class="app-nav-dot"></span>
+                        <span>Senior Dashboard</span>
+                    </a>
+                    <a asp-controller="Project" asp-action="Index" class="app-nav-link @(isProjectsActive ? "active" : string.Empty)">
+                        <span class="app-nav-dot"></span>
+                        <span>Projects</span>
+                    </a>
+                }
+
+                @if (User.IsInRole("Developer"))
+                {
+                    var isDeveloperDashboardActive = currentController == "Dashboard" && currentAction == "Developer";
+                    var isMessagesActive = currentController == "Project" && currentAction == "Messages";
+                    <a asp-controller="Dashboard" asp-action="Developer" class="app-nav-link @(isDeveloperDashboardActive ? "active" : string.Empty)">
+                        <span class="app-nav-dot"></span>
+                        <span>My Dashboard</span>
+                    </a>
+                    <a asp-controller="Project" asp-action="Messages" class="app-nav-link @(isMessagesActive ? "active" : string.Empty)">
+                        <span class="app-nav-dot"></span>
+                        <span>@Localizer["NavMessages"]</span>
+                    </a>
+                }
+
+                @if (User.IsInRole("Client"))
+                {
+                    var isClientDashboardActive = currentController == "Dashboard" && currentAction == "Client";
+                    <a asp-controller="Dashboard" asp-action="Client" class="app-nav-link @(isClientDashboardActive ? "active" : string.Empty)">
+                        <span class="app-nav-dot"></span>
+                        <span>Client Dashboard</span>
+                    </a>
+                }
+
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-user">
+                    <span class="sidebar-avatar">@initials</span>
+                    <span class="sidebar-username">@userName</span>
+                </div>
+                <button type="button" id="darkModeToggle">Dark mode</button>
+            </div>
+        </aside>
+
+        <div class="app-main">
+            <header class="app-topbar">
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="app-mobile-menu-btn" id="appSidebarToggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="app-page-title">@(ViewData["Title"]?.ToString() ?? "Dashboard")</h1>
+                </div>
+
+                <div class="app-topbar-right">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        @await Component.InvokeAsync("NotificationBell")
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="app-logout-btn">Logout</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="app-logout-btn text-decoration-none">Login</a>
+                        <a asp-controller="Account" asp-action="Register" class="app-logout-btn text-decoration-none">Register</a>
+                    }
+                </div>
+            </header>
+
+            <div class="app-breadcrumb-wrap">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                @for (var i = 0; i < breadcrumbParts.Length; i++)
+                {
+                    var crumb = breadcrumbParts[i];
+                    if (string.IsNullOrWhiteSpace(crumb))
+                    {
+                        continue;
+                    }
+
+                    if (i == breadcrumbParts.Length - 1)
+                    {
+                        <li class="breadcrumb-item active" aria-current="page">@crumb</li>
+                    }
+                    else
+                    {
+                        <li class="breadcrumb-item">@crumb</li>
+                    }
+                }
+            </ol>
+        </nav>
+
+            </div>
+
+            <main role="main" class="app-content">
+                @RenderBody()
+            </main>
+
+            <footer class="app-footer text-muted">
+                <div class="container">
+                    &copy; 2026 - monprojet.NET - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        @if (TempData["Success"] is string successMessage)
+        {
+            <div class="toast app-toast app-toast-success auto-dismiss-toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+                <div class="d-flex">
+                    <div class="toast-body">@successMessage</div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        }
+
+        @if (TempData["Error"] is string errorMessage)
+        {
+            <div class="toast app-toast app-toast-danger auto-dismiss-toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+                <div class="d-flex">
+                    <div class="toast-body">@errorMessage</div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="modal fade app-confirm-modal" id="confirmActionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Please confirm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="confirmActionMessage">Are you sure?</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmActionButton">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="globalLoadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center"
+         style="background-color: rgba(255, 255, 255, 0.7); z-index: 1200;">
+        <div class="spinner-border text-primary" role="status" aria-label="Loading"></div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeStorageKey = 'pm-dark-mode-enabled';
+            const appSidebarToggle = document.getElementById('appSidebarToggle');
+            const appSidebarOverlay = document.getElementById('appSidebarOverlay');
+
+            function closeSidebar() {
+                document.body.classList.remove('sidebar-open');
+            }
+
+            appSidebarToggle?.addEventListener('click', function () {
+                document.body.classList.toggle('sidebar-open');
+            });
+
+            appSidebarOverlay?.addEventListener('click', closeSidebar);
+
+            document.addEventListener('click', function (event) {
+                const link = event.target.closest('.app-nav-link');
+                if (link) {
+                    closeSidebar();
+                }
+            });
+
+            function applyDarkMode(isEnabled) {
+                document.body.classList.toggle('dark-mode', isEnabled);
+                darkModeToggle.textContent = isEnabled ? 'Light mode' : 'Dark mode';
+            }
+
+            const isDarkModeEnabled = localStorage.getItem(darkModeStorageKey) === 'true';
+            applyDarkMode(isDarkModeEnabled);
+
+            darkModeToggle?.addEventListener('click', function () {
+                const nextMode = !document.body.classList.contains('dark-mode');
+                localStorage.setItem(darkModeStorageKey, nextMode.toString());
+                applyDarkMode(nextMode);
+            });
+
+            const toastElements = document.querySelectorAll('.auto-dismiss-toast');
+            toastElements.forEach(function (toastElement) {
+                bootstrap.Toast.getOrCreateInstance(toastElement).show();
+            });
+
+            const confirmModalElement = document.getElementById('confirmActionModal');
+            const confirmMessageElement = document.getElementById('confirmActionMessage');
+            const confirmButton = document.getElementById('confirmActionButton');
+            const confirmModal = bootstrap.Modal.getOrCreateInstance(confirmModalElement);
+            let pendingAction = null;
+
+            document.addEventListener('click', function (event) {
+                const trigger = event.target.closest('[data-confirm]');
+                if (!trigger || trigger.dataset.confirmed === 'true') {
+                    return;
+                }
+
+                event.preventDefault();
+                const message = trigger.getAttribute('data-confirm') || 'Are you sure?';
+                confirmMessageElement.textContent = message;
+                pendingAction = trigger;
+                confirmModal.show();
+            });
+
+            confirmButton.addEventListener('click', function () {
+                if (!pendingAction) {
+                    return;
+                }
+
+                pendingAction.dataset.confirmed = 'true';
+
+                const tagName = pendingAction.tagName.toLowerCase();
+                if (tagName === 'a') {
+                    window.location.href = pendingAction.getAttribute('href');
+                }
+                else if (tagName === 'button' && pendingAction.type === 'submit')
+                {
+                    const form = pendingAction.closest('form');
+                    if (form) {
+                        form.requestSubmit(pendingAction);
+                    }
+                }
+                else if (tagName === 'button')
+                {
+                    pendingAction.dispatchEvent(new CustomEvent('confirmed', { bubbles: true }));
+                }
+                else if (tagName === 'form')
+                {
+                    pendingAction.submit();
+                }
+
+                confirmModal.hide();
+                pendingAction = null;
+            });
+
+            const loadingOverlay = document.getElementById('globalLoadingOverlay');
+            document.addEventListener('submit', function (event) {
+                const form = event.target;
+                if (!(form instanceof HTMLFormElement) || form.dataset.noSpinner === 'true') {
+                    return;
+                }
+
+                loadingOverlay.classList.remove('d-none');
+                loadingOverlay.classList.add('d-flex');
+            });
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
